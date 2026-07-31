@@ -103,7 +103,7 @@ let api_secret = std::env::var("ALPACA_API_SECRET")?;
 
 ## 文档
 
-- 在线文档：[docs](docs/README.md)（docsify 构建）
+- 在线文档：[docs](https://zzhenjie.github.io/TradeSDK)（docsify 构建）
 - 本地文档：`cargo doc --no-deps` 生成 rustdoc，位于 `target/doc/`
 
 ## License
