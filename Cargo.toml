@@ -1,0 +1,17 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-only"
+
+[workspace]
+members = [
+    "crates/alpaca_sdk",
+    "crates/finviz_sdk",
+]
+resolver = "2"
+
+[workspace.dependencies]
+anyhow = "1.0.102"
+serde = { version = "1.0.228", features = ["derive"] }
+chrono = { version = "0.4.44", features = ["serde"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "native-tls"] }
