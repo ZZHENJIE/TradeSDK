@@ -1,6 +1,6 @@
 # TradeSDK
 
-基于 Rust 的量化交易数据 SDK 工作区（workspace），封装了 **Alpaca** 与 **Finviz Elite** 两大行情数据源，提供类型安全的异步 API 接口。
+基于 Rust 的量化交易数据 SDK 工作区（workspace），封装了 **Alpaca**、**Finviz Elite** 与 **Benzinga** 三大行情数据源，提供类型安全的异步 API 接口。
 
 ## 特性
 
@@ -15,7 +15,8 @@
 TradeSDK/
 ├── crates/
 │   ├── alpaca_sdk/          # Alpaca 历史行情 SDK
-│   └── finviz_sdk/          # Finviz Elite 数据 SDK
+│   ├── finviz_sdk/          # Finviz Elite 数据 SDK
+│   └── benzinga_sdk/        # Benzinga 数据 SDK
 ├── docs/                    # 文档站点（docsify）
 ├── Cargo.toml               # 工作区配置
 └── README.md
@@ -27,6 +28,7 @@ TradeSDK/
 | --- | --- | --- |
 | [`alpaca_sdk`](docs/alpaca_sdk.md) | Alpaca Markets 历史行情（快照 / 交易 / 报价 / K 线） | `reqwest` `serde` `chrono` |
 | [`finviz_sdk`](docs/finviz_sdk.md) | Finviz Elite 数据（筛选器 / 行情 / 新闻） | `reqwest` `serde` `csv` |
+| [`benzinga_sdk`](docs/benzinga_sdk.md) | Benzinga 公开数据（IPO 日历） | `reqwest` `serde` `chrono` |
 
 ## 快速开始
 
@@ -40,6 +42,7 @@ TradeSDK/
 [dependencies]
 alpaca_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "alpaca_sdk" }
 finviz_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "finviz_sdk" }
+benzinga_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "benzinga_sdk" }
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -69,20 +72,20 @@ async fn main() -> anyhow::Result<()> {
 ### 使用 Finviz SDK
 
 ```rust
-use finviz_sdk::{Client, QuoteQuery};
-use finviz_sdk::quote::{Interval, ValidRanges};
+use finviz_sdk::{Client, StockQuery};
+use finviz_sdk::stock::{Interval, ValidRanges};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let client = Client::new("YOUR_FINVIZ_ELITE_AUTH_TOKEN");
 
-    let query = QuoteQuery {
+    let query = StockQuery {
         symbol: "AAPL".to_string(),
         interval: Interval::Day,
-        valid_ranges: ValidRanges::Month,
+        valid_ranges: ValidRanges::Month3,
     };
 
-    let bars = client.quote(&query).await?;
+    let bars = client.stock(&query).await?;
     for bar in bars {
         println!("{} open={} close={}", bar.date, bar.open, bar.close);
     }
@@ -91,6 +94,30 @@ async fn main() -> anyhow::Result<()> {
 ```
 
 > 注意：Finviz Elite 接口需要登录后在浏览器 URL 中获取的 `auth` 参数作为 API 密钥。
+
+### 使用 Benzinga SDK
+
+```rust
+use benzinga_sdk::{Client, IPOQuery, calendar::ipo::IPOType};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let client = Client::new();
+
+    let query = IPOQuery {
+        page_size: 100,
+        date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+        date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+        ipo_type: IPOType::SPAC,
+    };
+
+    let items = client.ipo(&query).await?;
+    for item in items {
+        println!("{} ({})", item.ticker, item.name);
+    }
+    Ok(())
+}
+```
 
 ## 环境变量
 
@@ -112,4 +139,4 @@ let api_secret = std::env::var("ALPACA_API_SECRET")?;
 
 ## 声明
 
-本 SDK 仅用于数据访问，不构成任何投资建议。使用前请遵守 Alpaca 与 Finviz 的服务条款。
+本 SDK 仅用于数据访问，不构成任何投资建议。使用前请遵守各数据源的服务条款。

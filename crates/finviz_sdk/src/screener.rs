@@ -18,7 +18,7 @@ impl Default for Query {
 impl Query {
     pub fn url(&self, auth: &str) -> String {
         let mut result = format!(
-            "https://elite.finviz.com/export?v=111&o={}&auth={}",
+            "https://elite.finviz.com/export/screener?v=111&o={}&auth={}",
             self.order_by, auth
         );
 

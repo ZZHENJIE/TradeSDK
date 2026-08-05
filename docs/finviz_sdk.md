@@ -1,6 +1,6 @@
 # Finviz SDK
 
-`finviz_sdk` 封装了 [Finviz Elite](https://elite.finviz.com) 的 CSV 导出接口，支持筛选器（Screener）、行情（Quote）与新闻（News）三种数据。
+`finviz_sdk` 封装了 [Finviz Elite](https://elite.finviz.com) 的 CSV 导出接口，支持筛选器（Screener）、行情（Stock）与新闻（News）三种数据。
 
 > 注意：这些接口需要 **Finviz Elite 付费账号**。登录后浏览器地址栏中 URL 携带的 `auth` 参数即为 API 密钥。
 
@@ -54,7 +54,7 @@ let default_query = ScreenerQuery::default();
 ### 请求 URL
 
 ```
-GET https://elite.finviz.com/export?v=111&o={order_by}&auth={auth}[&f={parameter}][&s={signal}]
+GET https://elite.finviz.com/export/screener?v=111&o={order_by}&auth={auth}[&f={parameter}][&s={signal}]
 ```
 
 ### 执行查询
@@ -79,16 +79,17 @@ let items = client.screener(&query).await?;
 | `change` | `Change` | `Option<String>` | 涨跌幅 |
 | `volume` | `Volume` | `Option<u64>` | 成交量 |
 
-## 行情查询（Quote）
+## 行情查询（Stock）
 
 获取单个股票的历史 OHLC 行情。
 
 ### 构造查询
 
 ```rust
-use finviz_sdk::{QuoteQuery, Interval, ValidRanges};
+use finviz_sdk::StockQuery;
+use finviz_sdk::stock::{Interval, ValidRanges};
 
-let query = QuoteQuery {
+let query = StockQuery {
     symbol: "AAPL".to_string(),
     interval: Interval::Day,
     valid_ranges: ValidRanges::Month3,
@@ -104,13 +105,13 @@ let query = QuoteQuery {
 ### 请求 URL
 
 ```
-GET https://elite.finviz.com/quote_export?t={symbol}&p={interval}&r={valid_ranges}&auth={auth}
+GET https://elite.finviz.com/export/stock?t={symbol}&p={interval}&r={valid_ranges}&auth={auth}
 ```
 
 ### 执行查询
 
 ```rust
-let bars = client.quote(&query).await?;
+let bars = client.stock(&query).await?;
 ```
 
 ### `Interval` 枚举
@@ -186,13 +187,13 @@ let stocks = NewsQuery::Stocks(StocksParameter {
 let crypto = NewsQuery::Crypto(vec!["BTC".to_string(), "ETH".to_string()]);
 ```
 
-### `Query` 变体
+### `NewsQuery` 变体
 
 | 变体 | 说明 |
 | --- | --- |
-| `Query::Market(MarketParameter)` | 市场新闻/博客，按时间或来源排序，可选分类 |
-| `Query::Stocks(StocksParameter)` | 指定股票代码的新闻，可选是否包含 ETF |
-| `Query::Crypto(Vec<String>)` | 加密货币新闻，空列表表示全部 |
+| `NewsQuery::Market(MarketParameter)` | 市场新闻/博客，按时间或来源排序，可选分类 |
+| `NewsQuery::Stocks(StocksParameter)` | 指定股票代码的新闻，可选是否包含 ETF |
+| `NewsQuery::Crypto(Vec<String>)` | 加密货币新闻，空列表表示全部 |
 
 ### 参数说明
 
@@ -230,21 +231,21 @@ let items = client.news(&news_query).await?;
 ## 完整示例
 
 ```rust
-use finviz_sdk::{Client, QuoteQuery};
-use finviz_sdk::quote::{Interval, ValidRanges};
+use finviz_sdk::{Client, StockQuery};
+use finviz_sdk::stock::{Interval, ValidRanges};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let client = Client::new(&std::env::var("FINVIZ_ELITE_AUTH")?);
 
     // 获取 AAPL 近 3 个月日线
-    let quote = QuoteQuery {
+    let query = StockQuery {
         symbol: "AAPL".to_string(),
         interval: Interval::Day,
         valid_ranges: ValidRanges::Month3,
     };
 
-    for bar in client.quote(&quote).await? {
+    for bar in client.stock(&query).await? {
         println!("{} O={} H={} L={} C={} V={}", bar.date, bar.open, bar.high, bar.low, bar.close, bar.volume);
     }
 

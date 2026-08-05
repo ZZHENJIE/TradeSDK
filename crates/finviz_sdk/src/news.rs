@@ -71,7 +71,7 @@ impl StocksParameter {
 
 impl Query {
     pub fn url(&self, auth: &str) -> String {
-        let base_url = format!("https://elite.finviz.com/news_export?auth={}&", auth);
+        let base_url = format!("https://elite.finviz.com/export/news?auth={}&", auth);
         match self {
             Query::Market(value) => format!("{}{}", base_url, value.url()),
             Query::Stocks(value) => format!("{}{}", base_url, value.url()),

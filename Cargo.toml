@@ -7,6 +7,8 @@ license = "GPL-3.0-only"
 members = [
     "crates/alpaca_sdk",
     "crates/finviz_sdk",
+    "crates/benzinga_sdk",
+    "crates/test",
 ]
 resolver = "2"
 

@@ -1,5 +1,5 @@
 [package]
-name = "finviz_sdk"
+name = "benzinga_sdk"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,4 +11,4 @@ unsafe_code = "deny"
 serde.workspace = true
 reqwest.workspace = true
 anyhow.workspace = true
-csv = "1.4.0"
+chrono.workspace = true

@@ -19,11 +19,11 @@ impl Client {
         crate::screener::fetch(query, &self.api_key, &self.http_client).await
     }
 
-    pub async fn quote(
+    pub async fn stock(
         &self,
-        query: &crate::QuoteQuery,
-    ) -> anyhow::Result<Vec<crate::quote::Item>> {
-        crate::quote::fetch(query, &self.api_key, &self.http_client).await
+        query: &crate::StockQuery,
+    ) -> anyhow::Result<Vec<crate::stock::Item>> {
+        crate::stock::fetch(query, &self.api_key, &self.http_client).await
     }
 
     pub async fn news(&self, query: &crate::NewsQuery) -> anyhow::Result<Vec<crate::news::Item>> {

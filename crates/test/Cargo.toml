@@ -1,0 +1,11 @@
+[package]
+name = "test"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+tokio = { version = "1.53.1", features = ["full"] }
+finviz_sdk = { path = "../finviz_sdk" }
+benzinga_sdk = { path = "../benzinga_sdk" }
+chrono.workspace = true

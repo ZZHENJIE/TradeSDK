@@ -78,7 +78,7 @@ impl Query {
         let interval: &str = self.interval.into();
         let valid_ranges: &str = self.valid_ranges.into();
         format!(
-            "https://elite.finviz.com/quote_export?t={}&p={}&r={}&auth={}",
+            "https://elite.finviz.com/export/stock?t={}&p={}&r={}&auth={}",
             self.symbol, interval, valid_ranges, auth
         )
     }
