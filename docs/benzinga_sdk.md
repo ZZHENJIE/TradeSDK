@@ -1,6 +1,6 @@
 # Benzinga SDK
 
-`benzinga_sdk` 封装了 [Benzinga](https://www.benzinga.com) 的公开数据接口，目前支持 IPO 日历查询。
+`benzinga_sdk` 封装了 [Benzinga](https://www.benzinga.com) 的公开数据接口，目前支持 IPO 日历、经济事件日历与财报日历三种查询。
 
 > 注意：当前接口为公开接口，无需 API 密钥即可访问。
 
@@ -29,7 +29,7 @@ Benzinga 客户端无需 API 密钥，可直接创建。
 ### 构造查询
 
 ```rust
-use benzinga_sdk::{IPOQuery, calendar::ipo::IPOType};
+use benzinga_sdk::calendar::{IPOQuery, ipo::IPOType};
 
 let query = IPOQuery {
     page_size: 100,
@@ -111,25 +111,171 @@ let items = client.ipo(&query).await?;
 | `underwriter_quiet_expiration_days` | `i32` | 承销静默期天数 |
 | `updated` | `i64` | 更新时间戳 |
 
+## 经济事件日历查询（Economics）
+
+获取指定时间范围内的经济事件数据。
+
+### 构造查询
+
+```rust
+use benzinga_sdk::calendar::EconomicsQuery;
+
+let query = EconomicsQuery {
+    page_size: 100,
+    date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+    date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+};
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `page_size` | `i64` | 每页返回数量 |
+| `date_from` | `NaiveDate` | 查询起始日期 |
+| `date_to` | `NaiveDate` | 查询结束日期 |
+
+### 请求 URL
+
+```
+GET https://www.benzinga.com/api-next/calendar/economics?pageSize={page_size}&dateFrom={date_from}&dateTo={date_to}
+```
+
+### 执行查询
+
+```rust
+let items = client.economics(&query).await?;
+```
+
+### 响应字段 `Item`
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `actual` | `String` | 实际值 |
+| `actual_t` | `String` | 实际值发布时间 |
+| `consensus` | `String` | 预期值 |
+| `consensus_t` | `String` | 预期值发布时间 |
+| `country` | `String` | 国家 |
+| `date` | `String` | 日期 |
+| `description` | `String` | 描述 |
+| `event_category` | `String` | 事件类别 |
+| `event_name` | `String` | 事件名称 |
+| `event_period` | `String` | 事件周期 |
+| `id` | `String` | ID |
+| `importance` | `u8` | 重要性等级 |
+| `notes` | `String` | 备注 |
+| `period_year` | `u16` | 周期年份 |
+| `prior` | `String` | 前值 |
+| `prior_t` | `String` | 前值发布时间 |
+| `time` | `String` | 时间 |
+| `updated` | `u64` | 更新时间戳 |
+
+## 财报日历查询（Earnings）
+
+获取指定时间范围内的财报数据。
+
+### 构造查询
+
+```rust
+use benzinga_sdk::calendar::EarningsQuery;
+
+let query = EarningsQuery {
+    page_size: 100,
+    date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+    date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+};
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `page_size` | `i64` | 每页返回数量 |
+| `date_from` | `NaiveDate` | 查询起始日期 |
+| `date_to` | `NaiveDate` | 查询结束日期 |
+
+### 请求 URL
+
+```
+GET https://www.benzinga.com/api-next/calendar/earnings?pageSize={page_size}&dateFrom={date_from}&dateTo={date_to}
+```
+
+### 执行查询
+
+```rust
+let items = client.earnings(&query).await?;
+```
+
+### 响应字段 `Item`
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `currency` | `String` | 货币 |
+| `cusip` | `String` | CUSIP 代码 |
+| `date` | `String` | 日期 |
+| `date_confirmed` | `u8` | 日期是否确认 |
+| `eps` | `String` | 每股收益 |
+| `eps_est` | `String` | 每股收益预期 |
+| `eps_prior` | `String` | 上期每股收益 |
+| `eps_surprise` | `String` | 每股收益意外 |
+| `eps_surprise_percent` | `String` | 每股收益意外百分比 |
+| `eps_type` | `String` | 每股收益类型 |
+| `exchange` | `String` | 交易所 |
+| `id` | `String` | ID |
+| `importance` | `u8` | 重要性等级 |
+| `isin` | `String` | ISIN 代码 |
+| `name` | `String` | 公司名称 |
+| `notes` | `String` | 备注 |
+| `period` | `String` | 财务周期 |
+| `period_year` | `u16` | 周期年份 |
+| `revenue` | `String` | 营收 |
+| `revenue_est` | `String` | 营收预期 |
+| `revenue_prior` | `String` | 上期营收 |
+| `revenue_surprise` | `String` | 营收意外 |
+| `revenue_surprise_percent` | `String` | 营收意外百分比 |
+| `revenue_type` | `String` | 营收类型 |
+| `ticker` | `String` | 股票代码 |
+| `time` | `String` | 时间 |
+| `updated` | `u64` | 更新时间戳 |
+
 ## 完整示例
 
 ```rust
-use benzinga_sdk::{Client, IPOQuery, calendar::ipo::IPOType};
+use benzinga_sdk::{Client, calendar::{IPOQuery, EarningsQuery, EconomicsQuery}};
+use benzinga_sdk::calendar::ipo::IPOType;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let client = Client::new();
 
-    let query = IPOQuery {
+    // IPO 日历
+    let ipos = client.ipo(&IPOQuery {
         page_size: 100,
         date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
         date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
         ipo_type: IPOType::SPAC,
-    };
+    }).await?;
 
-    let items = client.ipo(&query).await?;
-    for item in items {
-        println!("{} - {} ({})", item.ticker, item.name, item.exchange);
+    for item in ipos {
+        println!("IPO: {} - {} ({})", item.ticker, item.name, item.exchange);
+    }
+
+    // 经济事件日历
+    let events = client.economics(&EconomicsQuery {
+        page_size: 100,
+        date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+        date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+    }).await?;
+
+    for event in events {
+        println!("事件: {} ({})", event.event_name, event.country);
+    }
+
+    // 财报日历
+    let earnings = client.earnings(&EarningsQuery {
+        page_size: 100,
+        date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+        date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+    }).await?;
+
+    for e in earnings {
+        println!("财报: {} EPS={}", e.ticker, e.eps);
     }
 
     Ok(())

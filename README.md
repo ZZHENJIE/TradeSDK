@@ -28,7 +28,7 @@ TradeSDK/
 | --- | --- | --- |
 | [`alpaca_sdk`](docs/alpaca_sdk.md) | Alpaca Markets 历史行情（快照 / 交易 / 报价 / K 线） | `reqwest` `serde` `chrono` |
 | [`finviz_sdk`](docs/finviz_sdk.md) | Finviz Elite 数据（筛选器 / 行情 / 新闻） | `reqwest` `serde` `csv` |
-| [`benzinga_sdk`](docs/benzinga_sdk.md) | Benzinga 公开数据（IPO 日历） | `reqwest` `serde` `chrono` |
+| [`benzinga_sdk`](docs/benzinga_sdk.md) | Benzinga 公开数据（IPO / 财报 / 经济事件日历） | `reqwest` `serde` `chrono` |
 
 ## 快速开始
 
@@ -98,23 +98,33 @@ async fn main() -> anyhow::Result<()> {
 ### 使用 Benzinga SDK
 
 ```rust
-use benzinga_sdk::{Client, IPOQuery, calendar::ipo::IPOType};
+use benzinga_sdk::{Client, calendar::{IPOQuery, EarningsQuery}, calendar::ipo::IPOType};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let client = Client::new();
 
-    let query = IPOQuery {
+    let ipos = client.ipo(&IPOQuery {
         page_size: 100,
         date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
         date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
         ipo_type: IPOType::SPAC,
-    };
+    }).await?;
 
-    let items = client.ipo(&query).await?;
-    for item in items {
-        println!("{} ({})", item.ticker, item.name);
+    for item in &ipos[..5.min(ipos.len())] {
+        println!("IPO: {} ({})", item.ticker, item.name);
     }
+
+    let earnings = client.earnings(&EarningsQuery {
+        page_size: 50,
+        date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+        date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+    }).await?;
+
+    for e in &earnings[..5.min(earnings.len())] {
+        println!("财报: {} EPS={}", e.ticker, e.eps);
+    }
+
     Ok(())
 }
 ```

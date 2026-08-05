@@ -12,8 +12,22 @@ impl Client {
 
     pub async fn ipo(
         &self,
-        query: &crate::IPOQuery,
+        query: &crate::calendar::IPOQuery,
     ) -> anyhow::Result<Vec<crate::calendar::ipo::Item>> {
         crate::calendar::ipo::fetch(query, &self.http_client).await
+    }
+
+    pub async fn economics(
+        &self,
+        query: &crate::calendar::EconomicsQuery,
+    ) -> anyhow::Result<Vec<crate::calendar::economics::Item>> {
+        crate::calendar::economics::fetch(query, &self.http_client).await
+    }
+
+    pub async fn earnings(
+        &self,
+        query: &crate::calendar::EarningsQuery,
+    ) -> anyhow::Result<Vec<crate::calendar::earnings::Item>> {
+        crate::calendar::earnings::fetch(query, &self.http_client).await
     }
 }

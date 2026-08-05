@@ -6,7 +6,7 @@ TradeSDK 是一个基于 Rust 的量化交易数据 SDK 工作区，封装了 **
 
 - [Alpaca SDK](alpaca_sdk.md)：Alpaca Markets 历史行情数据（快照 / 交易 / 报价 / K 线）
 - [Finviz SDK](finviz_sdk.md)：Finviz Elite 数据（筛选器 / 行情 / 新闻）
-- [Benzinga SDK](benzinga_sdk.md)：Benzinga 数据（IPO 日历）
+- [Benzinga SDK](benzinga_sdk.md)：Benzinga 公开数据（IPO / 财报 / 经济事件日历）
 
 ## 工作区结构
 
@@ -89,23 +89,33 @@ async fn main() -> anyhow::Result<()> {
 #### Benzinga：查询 IPO 日历
 
 ```rust
-use benzinga_sdk::{Client, IPOQuery, calendar::ipo::IPOType};
+use benzinga_sdk::{Client, calendar::{IPOQuery, EarningsQuery}, calendar::ipo::IPOType};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let client = Client::new();
 
-    let query = IPOQuery {
+    let ipos = client.ipo(&IPOQuery {
         page_size: 100,
         date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
         date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
         ipo_type: IPOType::SPAC,
-    };
+    }).await?;
 
-    let items = client.ipo(&query).await?;
-    for item in items {
-        println!("{} ({})", item.ticker, item.name);
+    for item in &ipos[..5.min(ipos.len())] {
+        println!("IPO: {} ({})", item.ticker, item.name);
     }
+
+    let earnings = client.earnings(&EarningsQuery {
+        page_size: 50,
+        date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+        date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+    }).await?;
+
+    for e in &earnings[..5.min(earnings.len())] {
+        println!("财报: {} EPS={}", e.ticker, e.eps);
+    }
+
     Ok(())
 }
 ```

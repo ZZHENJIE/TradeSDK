@@ -1,4 +1,4 @@
-use benzinga_sdk::{IPOQuery, calendar::ipo::IPOType};
+use benzinga_sdk::calendar::{EarningsQuery, EconomicsQuery, IPOQuery, ipo::IPOType};
 use finviz_sdk::{NewsQuery, ScreenerQuery, StockQuery, news::StocksParameter};
 
 #[tokio::main]
@@ -19,7 +19,25 @@ async fn benzinga() {
         })
         .await;
 
+    let economics_result = client
+        .economics(&EconomicsQuery {
+            page_size: 100,
+            date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+            date_to: chrono::NaiveDate::from_ymd_opt(2026, 8, 8).unwrap(),
+        })
+        .await;
+
+    let earnings_result = client
+        .earnings(&EarningsQuery {
+            page_size: 100,
+            date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+            date_to: chrono::NaiveDate::from_ymd_opt(2026, 8, 8).unwrap(),
+        })
+        .await;
+
     println!("{:#?}", ipo_result);
+    println!("{:#?}", economics_result);
+    println!("{:#?}", earnings_result);
 }
 
 async fn finviz() {
