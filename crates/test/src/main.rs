@@ -8,8 +8,28 @@ const ALPACA_API_KEY: &str = "xxx";
 const ALPACA_API_SECRET: &str = "xxx";
 const FINVIZ_AUTH: &str = "xxx";
 
+/// Environment variable takes precedence, falling back to the source constant.
+fn secret(env_var: &str, fallback: &'static str) -> String {
+    std::env::var(env_var).unwrap_or_else(|_| fallback.to_string())
+}
+
+fn alpaca_api_key() -> String {
+    secret("ALPACA_API_KEY", ALPACA_API_KEY)
+}
+
+fn alpaca_api_secret() -> String {
+    secret("ALPACA_API_SECRET", ALPACA_API_SECRET)
+}
+
+fn finviz_auth() -> String {
+    secret("FINVIZ_ELITE_AUTH", FINVIZ_AUTH)
+}
+
 #[tokio::main]
 async fn main() {
+    // Load .env from the project root; already-set env vars take precedence.
+    dotenvy::dotenv().ok();
+
     let args: Vec<String> = std::env::args().skip(1).collect();
 
     let registry = registry();
@@ -104,7 +124,7 @@ fn registry() -> BTreeMap<&'static str, Runner> {
 }
 
 fn alpaca_client() -> alpaca_sdk::Client {
-    alpaca_sdk::Client::new(ALPACA_API_KEY, ALPACA_API_SECRET)
+    alpaca_sdk::Client::new(&alpaca_api_key(), &alpaca_api_secret())
 }
 
 fn benzinga_client() -> benzinga_sdk::Client {
@@ -112,7 +132,7 @@ fn benzinga_client() -> benzinga_sdk::Client {
 }
 
 fn finviz_client() -> finviz_sdk::Client {
-    finviz_sdk::Client::new(FINVIZ_AUTH)
+    finviz_sdk::Client::new(&finviz_auth())
 }
 
 fn date(y: i32, m: u32, d: u32) -> chrono::NaiveDate {
