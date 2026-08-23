@@ -1,0 +1,16 @@
+[package]
+name = "finviz_sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lints.rust]
+unsafe_code = "deny"
+
+[dependencies]
+serde.workspace = true
+reqwest.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+csv = "1.4.0"
+util = { path = "../util" }
