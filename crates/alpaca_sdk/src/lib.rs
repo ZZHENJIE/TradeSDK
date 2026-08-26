@@ -1,9 +1,14 @@
 pub mod client;
+pub mod exchange_codes;
 pub mod quote;
+pub mod quotes;
 pub mod snapshot;
 
 use chrono::{DateTime, Utc};
-pub use {client::Client, quote::Query as QuoteQuery, snapshot::Query as SnapshotQuery};
+pub use {
+    client::Client, exchange_codes::Query as ExchangeCodesQuery, quote::Query as QuoteQuery,
+    quotes::Query as QuotesQuery, snapshot::Query as SnapshotQuery,
+};
 
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum Feed {

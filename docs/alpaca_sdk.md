@@ -1,6 +1,6 @@
 # Alpaca SDK
 
-`alpaca_sdk` 封装了 [Alpaca Markets](https://alpaca.markets) 的[历史行情数据接口](https://docs.alpaca.markets/us/docs/historical-stock-data-1)，目前支持股票快照（Snapshot）与最新报价（Quote）查询。
+`alpaca_sdk` 封装了 [Alpaca Markets](https://alpaca.markets) 的[历史行情数据接口](https://docs.alpaca.markets/us/docs/historical-stock-data-1)，目前支持股票快照（Snapshot）、最新报价（Quote）、批量最新报价（Quotes）与交易所代码（Exchange Codes）查询。
 
 所有查询均实现 `util::API` trait，统一通过 `client.api(&query)` 调用。
 
@@ -181,6 +181,140 @@ println!("bid={} ask={}", response.quote.bid_price, response.quote.ask_price);
 | --- | --- | --- |
 | `symbol` | `String` | 股票代码 |
 | `quote` | `StockQuote` | 最新盘口报价（结构见快照查询的 `StockQuote` 表） |
+
+## 批量最新报价查询（Quotes）
+
+一次获取多只股票的最新盘口报价。
+
+### 构造查询
+
+```rust
+use alpaca_sdk::{QuotesQuery, Feed};
+
+let query = QuotesQuery {
+    symbol: vec!["AAPL".to_string(), "MSFT".to_string()],
+    feed: Feed::Iex,
+    currency: "USD".to_string(),
+};
+```
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `symbol` | `Vec<String>` | 股票代码列表（URL 中以逗号拼接为 `symbols` 参数） |
+| `feed` | `Feed` | 数据源（见快照查询的 Feed 枚举表） |
+| `currency` | `String` | 货币单位，如 `"USD"` |
+
+### 请求 URL
+
+```
+GET https://data.alpaca.markets/v2/stocks/quotes/latest?symbols={symbols}&feed={feed}&currency={currency}
+```
+
+### 执行查询
+
+```rust
+let response = client.api(&query).await?;
+for (symbol, quote) in &response.quotes {
+    println!("{symbol}: bid={} ask={}", quote.bid_price, quote.ask_price);
+}
+```
+
+### 响应字段 `Response`
+
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `quotes` | `HashMap<String, StockQuote>` | 以股票代码为 key 的最新盘口报价（`StockQuote` 结构见快照查询） |
+
+### 响应示例
+
+```json
+{
+  "quotes": {
+    "NVDA": {
+      "ap": 213.7,
+      "as": 500,
+      "ax": "P",
+      "bp": 213.67,
+      "bs": 100,
+      "bx": "P",
+      "c": ["R"],
+      "t": "2026-08-25T23:59:58.238340921Z",
+      "z": "C"
+    },
+    "AAPL": {
+      "ap": 309.31,
+      "as": 80,
+      "ax": "Q",
+      "bp": 309.27,
+      "bs": 40,
+      "bx": "Q",
+      "c": ["R"],
+      "t": "2026-08-25T23:59:56.497618992Z",
+      "z": "C"
+    }
+  }
+}
+```
+
+## 交易所代码查询（Exchange Codes）
+
+获取 Alpaca 支持的全部交易所代码与名称映射，无需查询参数。
+
+### 构造查询
+
+```rust
+use alpaca_sdk::ExchangeCodesQuery;
+
+let query = ExchangeCodesQuery {};
+```
+
+### 请求 URL
+
+```
+GET https://data.alpaca.markets/v2/stocks/meta/exchanges
+```
+
+### 执行查询
+
+```rust
+let exchanges = client.api(&query).await?;
+for (code, name) in &exchanges {
+    println!("{code}: {name}");
+}
+```
+
+### 响应类型
+
+`HashMap<String, String>` —— key 为交易所代码，value 为交易所完整名称。
+
+### 响应示例
+
+```json
+{
+  "A": "NYSE American (AMEX)",
+  "B": "NASDAQ OMX BX",
+  "C": "National Stock Exchange",
+  "D": "FINRA ADF",
+  "E": "Market Independent",
+  "H": "MIAX",
+  "I": "International Securities Exchange",
+  "J": "Cboe EDGA",
+  "K": "Cboe EDGX",
+  "L": "Long Term Stock Exchange",
+  "M": "Chicago Stock Exchange",
+  "N": "New York Stock Exchange",
+  "P": "NYSE Arca",
+  "Q": "NASDAQ OMX",
+  "S": "NASDAQ Small Cap",
+  "T": "NASDAQ Int",
+  "U": "Members Exchange",
+  "V": "IEX",
+  "W": "CBOE",
+  "X": "NASDAQ OMX PSX",
+  "Y": "Cboe BYX",
+  "Z": "Cboe BZ"
+}
+```
 
 ## 完整示例
 

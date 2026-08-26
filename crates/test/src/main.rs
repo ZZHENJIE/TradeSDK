@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use alpaca_sdk::{Feed, QuoteQuery, SnapshotQuery};
+use alpaca_sdk::{ExchangeCodesQuery, Feed, QuoteQuery, QuotesQuery, SnapshotQuery};
 use benzinga_sdk::calendar::{EarningsQuery, EconomicsQuery, IPOQuery, ipo::IPOType};
 use finviz_sdk::{NewsQuery, ScreenerQuery, StockQuery, news::StocksParameter};
 
@@ -89,6 +89,14 @@ fn registry() -> BTreeMap<&'static str, Runner> {
             (|| Box::pin(run_alpaca_quote()) as _) as Runner,
         ),
         (
+            "alpaca:quotes",
+            (|| Box::pin(run_alpaca_quotes()) as _) as Runner,
+        ),
+        (
+            "alpaca:exchange_codes",
+            (|| Box::pin(run_alpaca_exchange_codes()) as _) as Runner,
+        ),
+        (
             "benzinga:earnings",
             (|| Box::pin(run_benzinga_earnings()) as _) as Runner,
         ),
@@ -159,6 +167,24 @@ async fn run_alpaca_quote() -> anyhow::Result<()> {
             currency: "USD".to_string(),
         })
         .await?;
+    println!("{response:#?}");
+    Ok(())
+}
+
+async fn run_alpaca_quotes() -> anyhow::Result<()> {
+    let response = alpaca_client()
+        .api(&QuotesQuery {
+            symbol: vec!["AAPL".to_string(), "MSFT".to_string(), "AMZN".to_string()],
+            feed: Feed::DelayedSip,
+            currency: "USD".to_string(),
+        })
+        .await?;
+    println!("{response:#?}");
+    Ok(())
+}
+
+async fn run_alpaca_exchange_codes() -> anyhow::Result<()> {
+    let response = alpaca_client().api(&ExchangeCodesQuery {}).await?;
     println!("{response:#?}");
     Ok(())
 }
