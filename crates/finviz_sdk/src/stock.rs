@@ -1,3 +1,5 @@
+use chrono::TimeZone;
+
 #[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize)]
 pub enum Interval {
     Minute,
@@ -94,14 +96,78 @@ impl util::API for Query {
         http_client: &reqwest::Client,
         params: Option<Self::P>,
     ) -> anyhow::Result<Self::T> {
-        crate::fetch_csv(&self.url(params), http_client).await
+        let items: Vec<ResourceItem> = crate::fetch_csv(&self.url(params), http_client).await?;
+        items
+            .iter()
+            .map(|item| item.try_into())
+            .collect::<anyhow::Result<Vec<Item>>>()
+    }
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct ResourceItem {
+    #[serde(rename = "Date")]
+    pub date: String,
+    #[serde(rename = "Open")]
+    pub open: f64,
+    #[serde(rename = "High")]
+    pub high: f64,
+    #[serde(rename = "Low")]
+    pub low: f64,
+    #[serde(rename = "Close")]
+    pub close: f64,
+    #[serde(rename = "Volume")]
+    pub volume: u64,
+}
+
+fn parse_eastern_time(s: &str) -> anyhow::Result<chrono::NaiveDateTime> {
+    let s = s.trim();
+
+    // 12-hour format (04:00 AM)
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(s, "%m/%d/%Y %I:%M %p") {
+        return Ok(dt);
+    }
+
+    // Strip trailing AM/PM, parse as 24-hour format (13:00 PM -> 13:00)
+    let without_ampm = s
+        .trim_end_matches(|c: char| c.is_ascii_alphabetic() || c == ' ')
+        .trim();
+    if let Ok(dt) = chrono::NaiveDateTime::parse_from_str(without_ampm, "%m/%d/%Y %H:%M") {
+        return Ok(dt);
+    }
+
+    anyhow::bail!("failed to parse date: {}", s)
+}
+
+impl TryInto<Item> for &ResourceItem {
+    type Error = anyhow::Error;
+
+    fn try_into(self) -> anyhow::Result<Item> {
+        let naive_dt = parse_eastern_time(&self.date)
+            .map_err(|e| anyhow::anyhow!("failed to parse '{}': {}", self.date, e))?;
+
+        let local_dt = chrono_tz::America::New_York
+            .from_local_datetime(&naive_dt)
+            .single()
+            .ok_or_else(|| anyhow::anyhow!("invalid US Eastern time: {}", self.date))?;
+
+        let utc_dt = local_dt.with_timezone(&chrono::Utc);
+
+        Ok(Item {
+            timestamp: utc_dt,
+            open: self.open,
+            high: self.high,
+            low: self.low,
+            close: self.close,
+            volume: self.volume,
+        })
     }
 }
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct Item {
-    #[serde(rename = "Date")]
-    pub date: String,
+    #[serde(rename = "Date", with = "chrono::serde::ts_seconds")]
+    pub timestamp: chrono::DateTime<chrono::Utc>,
     #[serde(rename = "Open")]
     pub open: f64,
     #[serde(rename = "High")]

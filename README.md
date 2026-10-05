@@ -16,7 +16,9 @@ TradeSDK/
 ├── crates/
 │   ├── alpaca_sdk/          # Alpaca 历史行情 SDK
 │   ├── finviz_sdk/          # Finviz Elite 数据 SDK
-│   └── benzinga_sdk/        # Benzinga 数据 SDK
+│   ├── benzinga_sdk/        # Benzinga 数据 SDK
+│   ├── util/                # 共享工具（util::API trait、美东时间解析等）
+│   └── test/                # 内部集成测试 / 示例程序
 ├── docs/                    # 文档站点（docsify）
 ├── Cargo.toml               # 工作区配置
 └── README.md
@@ -29,6 +31,7 @@ TradeSDK/
 | [`alpaca_sdk`](docs/alpaca_sdk.md) | Alpaca Markets 历史行情（快照 / 交易 / 报价 / K 线） | `reqwest` `serde` `chrono` |
 | [`finviz_sdk`](docs/finviz_sdk.md) | Finviz Elite 数据（筛选器 / 行情 / 新闻 / 日历） | `reqwest` `serde` `csv` |
 | [`benzinga_sdk`](docs/benzinga_sdk.md) | Benzinga 公开数据（IPO / 财报 / 经济事件日历） | `reqwest` `serde` `chrono` |
+| [`util`](crates/util/src/lib.rs) | 共享工具：`API` trait、JSON 拉取、美东时间→UTC 时间戳解析 | `reqwest` `serde` `chrono` `chrono-tz` |
 
 ## 快速开始
 
@@ -44,7 +47,10 @@ alpaca_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "alpaca_s
 finviz_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "finviz_sdk" }
 benzinga_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "benzinga_sdk" }
 tokio = { version = "1", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
 ```
+
+> 所有查询均实现统一的 `util::API` trait，通过 `client.api(&query)` 调用；日历类 Query 还提供 `fetch_raw` 方法，可获取未经转换的原始数据。
 
 ### 使用 Alpaca SDK
 
@@ -61,7 +67,7 @@ async fn main() -> anyhow::Result<()> {
         currency: "USD".to_string(),
     };
 
-    let snapshot = client.snapshot(&query).await?;
+    let snapshot = client.api(&query).await?;
     if let Some(bar) = snapshot.snapshot.daily_bar {
         println!("{} 收盘价: {}", snapshot.symbol, bar.close);
     }
@@ -85,9 +91,9 @@ async fn main() -> anyhow::Result<()> {
         valid_ranges: ValidRanges::Month3,
     };
 
-    let bars = client.stock(&query).await?;
+    let bars = client.api(&query).await?;
     for bar in bars {
-        println!("{} open={} close={}", bar.date, bar.open, bar.close);
+        println!("{} open={} close={}", bar.timestamp, bar.open, bar.close);
     }
     Ok(())
 }
@@ -104,7 +110,7 @@ use benzinga_sdk::{Client, calendar::{IPOQuery, EarningsQuery}, calendar::ipo::I
 async fn main() -> anyhow::Result<()> {
     let client = Client::new();
 
-    let ipos = client.ipo(&IPOQuery {
+    let ipos = client.api(&IPOQuery {
         page_size: 100,
         date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
         date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
@@ -115,7 +121,7 @@ async fn main() -> anyhow::Result<()> {
         println!("IPO: {} ({})", item.ticker, item.name);
     }
 
-    let earnings = client.earnings(&EarningsQuery {
+    let earnings = client.api(&EarningsQuery {
         page_size: 50,
         date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
         date_to: chrono::NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),

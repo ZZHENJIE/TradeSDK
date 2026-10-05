@@ -10,6 +10,7 @@
 [dependencies]
 finviz_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "finviz_sdk" }
 tokio = { version = "1", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
 ```
 
 ## 创建客户端
@@ -149,14 +150,18 @@ let bars = client.api(&query).await?;
 
 ### 响应字段 `Item`
 
+`client.api(&query)` 返回的每条记录中，`Date` 列的美东时间字符串会被解析并转换为 UTC 时间戳：
+
 | 字段 | CSV 列 | 类型 | 说明 |
 | --- | --- | --- | --- |
-| `date` | `Date` | `String` | 日期 |
+| `timestamp` | `Date` | `DateTime<Utc>` | UTC 时间戳（由美东时间解析） |
 | `open` | `Open` | `f64` | 开盘价 |
 | `high` | `High` | `f64` | 最高价 |
 | `low` | `Low` | `f64` | 最低价 |
 | `close` | `Close` | `f64` | 收盘价 |
 | `volume` | `Volume` | `u64` | 成交量 |
+
+CSV 原始行对应 `finviz_sdk::stock::ResourceItem`（`date` 为美东时间字符串，`04:00 AM` 12 小时制与 `13:00 PM` 带后缀的 24 小时制两种格式均可解析；转换按 `America/New_York` 时区处理夏令时）。
 
 ## 新闻查询（News）
 
@@ -235,9 +240,9 @@ let items = client.api(&news_query).await?;
 ### 构造查询
 
 ```rust
-use finviz_sdk::EconomicsQuery;
+use finviz_sdk::CalendarEconomicsQuery;
 
-let query = EconomicsQuery {
+let query = CalendarEconomicsQuery {
     date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 17).unwrap(),
     date_to: chrono::NaiveDate::from_ymd_opt(2026, 8, 24).unwrap(),
 };
@@ -279,9 +284,9 @@ let items = client.api(&query).await?;
 ### 构造查询
 
 ```rust
-use finviz_sdk::EarningsQuery;
+use finviz_sdk::CalendarEarningsQuery;
 
-let query = EarningsQuery {
+let query = CalendarEarningsQuery {
     date_from: chrono::NaiveDate::from_ymd_opt(2026, 8, 17).unwrap(),
     date_to: chrono::NaiveDate::from_ymd_opt(2026, 8, 24).unwrap(),
 };
@@ -332,7 +337,7 @@ let client = finviz_sdk::Client::new(&std::env::var("FINVIZ_ELITE_AUTH")?);
 let raw_items = query.fetch_raw(&client.http_client, Some("YOUR_AUTH")).await?;
 ```
 
-默认的 `client.api(&query)` 返回转换后的 `Item`（`timestamp: i64`）。
+默认的 `client.api(&query)` 返回转换后的 `Item`（行情为 `timestamp: DateTime<Utc>`，日历为 `timestamp: i64`）。
 
 ## 完整示例
 
@@ -352,7 +357,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     for bar in client.api(&query).await? {
-        println!("{} O={} H={} L={} C={} V={}", bar.date, bar.open, bar.high, bar.low, bar.close, bar.volume);
+        println!("{} O={} H={} L={} C={} V={}", bar.timestamp, bar.open, bar.high, bar.low, bar.close, bar.volume);
     }
 
     Ok(())

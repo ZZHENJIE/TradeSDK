@@ -15,7 +15,9 @@ TradeSDK/
 ├── crates/
 │   ├── alpaca_sdk/          # Alpaca 历史行情 SDK
 │   ├── finviz_sdk/          # Finviz Elite 数据 SDK
-│   └── benzinga_sdk/        # Benzinga 数据 SDK
+│   ├── benzinga_sdk/        # Benzinga 数据 SDK
+│   ├── util/                # 共享工具（util::API trait、美东时间解析等）
+│   └── test/                # 内部集成测试 / 示例程序
 ├── docs/                    # 本文档站点（docsify）
 ├── Cargo.toml               # 工作区配置
 └── README.md                # 项目 README
@@ -35,6 +37,7 @@ alpaca_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "alpaca_s
 finviz_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "finviz_sdk" }
 benzinga_sdk = { git = "https://github.com/ZZHENJIE/TradeSDK", package = "benzinga_sdk" }
 tokio = { version = "1", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
 ```
 
 ### 示例
@@ -80,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
 
     let bars = client.api(&query).await?;
     for bar in bars {
-        println!("{} open={} close={}", bar.date, bar.open, bar.close);
+        println!("{} open={} close={}", bar.timestamp, bar.open, bar.close);
     }
     Ok(())
 }
